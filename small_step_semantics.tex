@@ -13,10 +13,10 @@
 
 % Title formatting
 \pretitle{\centering\LARGE\bfseries\vspace{0em}}
-\posttitle{\par\vspace{1em}}
+\posttitle{\par\vspace{0em}}
 
 \preauthor{\centering\large}
-\postauthor{\par\vspace{1em}}
+\postauthor{\par\vspace{0em}}
 
 \predate{\centering\small}
 \postdate{\par}
@@ -25,7 +25,7 @@
 \setlength{\parindent}{0pt} % no indend automatically everywhere
 
 \title{Small step semantics for arithmetic expressions in Lean}
-\author{Sonja Joost}
+\author{}
 \date{} % empty date
 
 
@@ -36,38 +36,16 @@
 \newtheorem{lemma}{Lemma}
 
 \maketitle
-In this document we will define small step rules for the datatype defining arithmetic expressions in \texttt{Test.lean}. After that, we will show that the \texttt{eval} function defined in Lean corresponds to the defined small step rules. %The proof are paper-proofs, but also implemented in Lean.
+In this document we will define small step rules for the datatype defined in \texttt{math-expr.lean}. After that, we will show that the \texttt{eval} function defined in Lean corresponds to the defined small step rules. %The proof are paper-proofs, but also implemented in Lean.
 
 \section{Rules}
 The datatype is defined as 
 \[
-e ::= \operatorname{const}(q) \mid \operatorname{var}(x) \mid \operatorname{add}(e_1,e_2) \mid \operatorname{sub}(e_1,e_2) \mid \operatorname{mul}(e_1,e_2) \mid \operatorname{div}(e_1,e_2),\qquad q\in\mathbb{Q},~x\in\text{String}.
+e ::= \operatorname{const}(q) \mid \operatorname{var}(x) \mid \operatorname{add}(e_1,e_2) \mid \operatorname{sub}(e_1,e_2) \mid \operatorname{mul}(e_1,e_2) \mid \operatorname{div}(e_1,e_2)\qquad q\in\mathbb{Q},~x\in\text{String}.
 \]
-In the following we abbreviate constants with values. A value is a constant: $v ::= \operatorname{const}(q)$.
+An \emph{environment} $\Gamma : \text{Var} \rightharpoonup \mathbb{Q}$ maps variables to rationals. We write $\Gamma(x)=q$ if the variable $x$ is bound to the value $q$ and $\Gamma(x)=\bot$ if unbound. The small-step semantics now depend on $\Gamma$. We write $\Gamma\vdash e \to e'$ if an expression $e$ steps (in one step) to $e'$ in environment $\Gamma$. 
 
-An \emph{environment} $\Gamma : \text{Var} \rightharpoonup \mathbb{Q}$ maps variables to rationals. We write $\Gamma(x)=q$ if the variable $x$ is bound to the value $q$ and $\Gamma(x)=\bot$ if unbound.
-
-
-
-Small-step now depends on $\Gamma$: $\Gamma\vdash e \to e'$. Evaluation order is left-to-right (eager evaluation).
-
-Congruence (context) rules:
-\begin{mathpar}
-\inferrule*[right=E-AddL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{add}(e_1,e_2) \to \operatorname{add}(e_1',e_2)}
-\and
-\inferrule*[right=E-AddR]{v \text{ value} \\ \Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{add}(v,e_2) \to \operatorname{add}(v,e_2')}\\
-\inferrule*[right=E-SubL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{sub}(e_1,e_2) \to \operatorname{sub}(e_1',e_2)}
-\and
-\inferrule*[right=E-SubR]{v \text{ value} \\ \Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{sub}(v,e_2) \to \operatorname{sub}(v,e_2')}\\
-\inferrule*[right=E-MulL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{mul}(e_1,e_2) \to \operatorname{mul}(e_1',e_2)}
-\and
-\inferrule*[right=E-MulR]{v \text{ value} \\ \Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{mul}(v,e_2) \to \operatorname{mul}(v,e_2')}\\
-\inferrule*[right=E-DivL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{div}(e_1,e_2) \to \operatorname{div}(e_1',e_2)}
-\and
-\inferrule*[right=E-DivR]{v \text{ value} \\ \Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{div}(v,e_2) \to \operatorname{div}(v,e_2')}
-\end{mathpar}
-
-Lookup and computation rules:
+We first define the rules that result in a constant:
 \begin{mathpar}
 \inferrule*[right=E-Var]{\Gamma(x)=q}{\Gamma\vdash \operatorname{var}(x) \to \operatorname{const}(q)}\\
 \inferrule*[right=E-Add]{~}{\Gamma\vdash \operatorname{add}(\operatorname{const}(q_1),\operatorname{const}(q_2)) \to \operatorname{const}(q_1+q_2)}
@@ -78,69 +56,36 @@ Lookup and computation rules:
 \inferrule*[right=E-Div]{q_2\neq 0}{\Gamma\vdash \operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(q_2)) \to \operatorname{const}\!\left(\dfrac{q_1}{q_2}\right)}
 \end{mathpar}
 
+
+In addition we need the context rules. Evaluation order is left-to-right. 
+\begin{mathpar}
+\inferrule*[right=E-AddL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{add}(e_1,e_2) \to \operatorname{add}(e_1',e_2)}
+\and
+\inferrule*[right=E-AddR]{\Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{add}(\operatorname{const}(q),e_2) \to \operatorname{add}(\operatorname{const}(q),e_2')}\\
+
+\inferrule*[right=E-SubL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{sub}(e_1,e_2) \to \operatorname{sub}(e_1',e_2)}
+\and
+\inferrule*[right=E-SubR]{ \Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{sub}(\operatorname{const}(q),e_2) \to \operatorname{sub}(\operatorname{const}(q),e_2')}\\
+
+\inferrule*[right=E-MulL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{mul}(e_1,e_2) \to \operatorname{mul}(e_1',e_2)}
+\and
+\inferrule*[right=E-MulR]{ \Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{mul}(\operatorname{const}(q),e_2) \to \operatorname{mul}(\operatorname{const}(q),e_2')}\\
+
+\inferrule*[right=E-DivL]{\Gamma\vdash e_1 \to e_1'}{\Gamma\vdash \operatorname{div}(e_1,e_2) \to \operatorname{div}(e_1',e_2)}
+\and
+\inferrule*[right=E-DivR]{\Gamma\vdash e_2 \to e_2'}{\Gamma\vdash \operatorname{div}(\operatorname{const}(q),e_2) \to \operatorname{div}(\operatorname{const}(q),e_2')}
+\end{mathpar}
+
+
+
 No rule applies for division by zero or an unbound variable, so those forms are stuck. This corresponds to the evaluation function that would return none. 
 
-Write $\Gamma\vdash e \to^{\!*} e'$ for the reflexive–transitive closure.
+We write $\Gamma\vdash e \to^{\!*} e'$ for the reflexive-transitive closure of $\to$. To be more exact, $\Gamma \vdash e \to^{*}e'$ if either $e=e'$ (the reflexive case) or there exists an $e''$ such that $\Gamma \vdash e \to^{*} e''$ and $\Gamma\vdash e''\to e'$ (the transitive case).
 
 \section{Helper lemmas}
-Define $e \downarrow_{\Gamma} q :\iff \operatorname{eval}(e,\Gamma)=\text{some }q$. % and $e \downarrow\!\downarrow_{\Gamma} :\iff \operatorname{eval}(e,\Gamma)=\text{none}$.
 
-\begin{lemma}[Canonical forms]
-If $v$ is a value then $v=\operatorname{const}(q)$.
-\end{lemma}
-
-\begin{lemma}[Terminal Normal forms]
-If $e$ is $\Gamma$-normal (no $e'$ with $\Gamma\vdash e\to e'$) and a value or \emph{cannot reach a compound expression through any steps}, then exactly one of:
-\begin{enumerate}[label=\alph*)]
-\item $e=\operatorname{const}(q)$;
-\item $e=\operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(0))$;
-\item $e=\operatorname{var}(x)$ with $\Gamma(x)=\bot$.
-\end{enumerate}
-These are the \emph{terminal} normal forms. Note that stuck expressions may also have compound structure (e.g., $\operatorname{add}(n,e)$ where $n$ is a terminal stuck form). %, but by the multi-step relation, any stuck expression eventually reaches or contains a terminal stuck form.
-\end{lemma}
-
-\begin{proof}
-We must show both directions: if $e$ is normal then it's one of these forms, and conversely.
-
-\textbf{($\Rightarrow$) If $e$ is $\Gamma$-normal then $e$ is one of (a), (b), (c).}
-
-By structural induction on $e$:
-
-\begin{description}
-\item[Const:] $e=\operatorname{const}(q)$. This is form (a).
-
-\item[Var:] $e=\operatorname{var}(x)$. If $\Gamma(x)=q$, then E-Var applies, so $e$ is not normal. Thus $\Gamma(x)=\bot$, giving form (c).
-
-\item[Add:] $e=\operatorname{add}(e_1,e_2)$. For $e$ to be normal:
-\begin{itemize}
-\item E-AddL requires $e_1$ to step, so $e_1$ must be normal.
-\item If $e_1$ is a value (i.e., $e_1=\operatorname{const}(r)$), then E-AddR would apply if $e_2$ steps, so $e_2$ must be normal.
-\item If both $e_1=\operatorname{const}(r_1)$ and $e_2=\operatorname{const}(r_2)$, then E-Add applies, contradiction.
-\end{itemize}
-So we need $e_1$ to be a value and $e_2$ to be a normal non-value, or $e_1$ to be a normal non-value. By IH, normal forms are only (a), (b), (c). Forms (b) and (c) are not values. But if $e$ has a compound structure like $\operatorname{add}(\ldots)$, it cannot match any of (a), (b), (c), which are all atomic. This is a contradiction. Therefore, $e$ cannot have the form $\operatorname{add}(e_1,e_2)$ and be a normal form.
-
-\item[Sub/Mul:] Similar reasoning: compound expressions cannot be normal forms.
-
-\item[Div:] $e=\operatorname{div}(e_1,e_2)$. For $e$ to be normal, $e_1$ cannot step (else E-DivL applies). If $e_1=\operatorname{const}(r_1)$, then $e_2$ cannot step (else E-DivR applies). If $e_2=\operatorname{const}(r_2)$ with $r_2\neq 0$, then E-Div applies. So the only way $\operatorname{div}(\operatorname{const}(r_1),\operatorname{const}(r_2))$ is normal is if $r_2=0$, giving form (b). Any other structure for $\operatorname{div}(e_1,e_2)$ would be compound and not match (a), (b), or (c).
-\end{description}
-
-\textbf{($\Leftarrow$) Each of (a), (b), (c) is $\Gamma$-normal.}
-
-\begin{itemize}
-\item Form (a): $e=\operatorname{const}(q)$. No rule has a constant as the source of a step.
-\item Form (b): $e=\operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(0))$. The only applicable rule would be E-Div, but it requires $q_2\neq 0$, which fails.
-\item Form (c): $e=\operatorname{var}(x)$ with $\Gamma(x)=\bot$. E-Var requires $\Gamma(x)=q$, which fails.
-\end{itemize}
-
-Thus the three forms are exactly the normal forms.
-\end{proof}
-
-
-
-\subsection*{Auxiliary multi-step lemmas}
-We use the reflexive--transitive closure $\Gamma\vdash e\to^{\!*}e'$ (written in Lean as the inductive predicate `Steps env e e'`). The following lemmas mirror the Lean helper lemmas.
-
-\begin{lemma}[Concatenation (Lean: \texttt{Steps.append}).] 
+\begin{lemma}[Concatenation, Lean: \texttt{Steps.append}] 
+    \label{concatenation-lemma}
     If $\Gamma\vdash e\to^{\!*}e_1$ and $\Gamma\vdash e_1\to^{\!*}e_2$ then $\Gamma\vdash e\to^{\!*}e_2$. 
 \end{lemma}
 
@@ -151,19 +96,16 @@ Let $h_1 : \Gamma\vdash e\to^{\!*}e_1$ and $h_2 : \Gamma\vdash e_1\to^{\!*}e_2$.
 
 \textbf{Inductive case:} $h_2$ is of the form $\Gamma\vdash e_1\to^{\!*}e'$ followed by a single step $\Gamma\vdash e'\to e_2$ for some intermediate expression $e'$. 
 
-By the induction hypothesis applied to $h_1$ and $\Gamma\vdash e_1\to^{\!*}e'$, we obtain $\Gamma\vdash e\to^{\!*}e'$.
-
-Now we apply the trans constructor to combine $\Gamma\vdash e\to^{\!*}e'$ with the single step $\Gamma\vdash e'\to e_2$ to get $\Gamma\vdash e\to^{\!*}e_2$.
+By the induction hypothesis applied to $h_1$ and $\Gamma\vdash e_1\to^{\!*}e'$, we obtain $\Gamma\vdash e\to^{\!*}e'$. By definition of $\to^{*}$ we can combine $\Gamma\vdash e\to^{\!*}e'$ with the single step $\Gamma\vdash e'\to e_2$ to get $\Gamma\vdash e\to^{\!*}e_2$.
 \end{proof}
 
-\begin{lemma}[Context lifting (Lean: \texttt{Steps.liftCtx}).] 
-    Let $C[\_]$ be a one-hole context formed by adding a fixed surrounding constructor (e.g. $C[t]=\operatorname{add}(t,e_2)$). Suppose every single step lifts through $C$: whenever $\Gamma\vdash t\to t'$ then $\Gamma\vdash C[t]\to C[t']$. Then if $\Gamma\vdash e\to^{\!*} e'$ we have $\Gamma\vdash C[e]\to^{\!*}C[e']$. 
+\begin{lemma}[Context lifting, Lean: \texttt{Steps.liftCtx}] 
+    \label{context-lifting-lemma}
+    Let $C[\_]$ be a one-hole context formed by adding a fixed surrounding constructor (e.g. $C[t]=\operatorname{add}(t,e_2)$). Suppose every single step lifts through $C$: for all expressions $e_1, e_2$ whenever $\Gamma\vdash e_1\to e_2$ then $\Gamma\vdash C[e_1]\to C[e_2]$. Then if $\Gamma\vdash e\to^{\!*} e'$ we have $\Gamma\vdash C[e]\to^{\!*}C[e']$. 
 \end{lemma}
 
 \begin{proof}
-Let $h : \Gamma\vdash e\to^{\!*}e'$ and assume the lifting property: for all $x, y$, if $\Gamma\vdash x\to y$ then $\Gamma\vdash C[x]\to C[y]$.
-
-We proceed by induction on $h$.
+Let $h : \Gamma\vdash e\to^{\!*}e'$ and assume the lifting property. We proceed by induction on $h$.
 
 \textbf{Base case:} $h$ is the reflexive rule, so $e = e'$. Then $C[e] = C[e']$ and $\Gamma\vdash C[e]\to^{\!*}C[e']$ by reflexivity.
 
@@ -173,162 +115,52 @@ By the induction hypothesis applied to $\Gamma\vdash e\to^{\!*}e''$, we obtain $
 
 By the lifting property applied to the single step $\Gamma\vdash e''\to e'$, we obtain $\Gamma\vdash C[e'']\to C[e']$.
 
-We apply the trans constructor to combine $\Gamma\vdash C[e]\to^{\!*}C[e'']$ with $\Gamma\vdash C[e'']\to C[e']$ to get $\Gamma\vdash C[e]\to^{\!*}C[e']$.
+By definition of $\to^{*}$ we can combine $\Gamma\vdash C[e]\to^{\!*}C[e'']$ with $\Gamma\vdash C[e'']\to C[e']$ to get $\Gamma\vdash C[e]\to^{\!*}C[e']$.
 \end{proof}
 
 
-\begin{lemma}[Reduction lemmas (Lean: \texttt{Steps.reduceAdd}, \texttt{Steps.reduceSub}, \texttt{Steps.reduceMul}, \texttt{Steps.reduceDiv}.).] For each arithmetic operator we derive a multi-step reduction once its operands are reduced to constants:
+\begin{lemma}[Reduction lemmas, Lean: \texttt{Steps.reduceAdd}, \texttt{Steps.reduceSub}, \texttt{Steps.reduceMul}, \texttt{Steps.reduceDiv}] For each arithmetic operator we derive a multi-step reduction once its operands are reduced to constants:
 \begin{align*}
 &\text{Add: }\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1),\ \Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2) \Rightarrow \Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1+r_2).\\
-&\text{Sub: }\cdots \Rightarrow \Gamma\vdash \operatorname{sub}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1-r_2).\\
-&\text{Mul: }\cdots \Rightarrow \Gamma\vdash \operatorname{mul}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1\cdot r_2).\\
-&\text{Div: }r_2\neq 0,\ \cdots \Rightarrow \Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1/r_2).
+&\text{Sub: }\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1),\ \Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2) \Rightarrow \Gamma\vdash \operatorname{sub}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1-r_2).\\
+&\text{Mul: }\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1),\ \Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2)\Rightarrow \Gamma\vdash \operatorname{mul}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1\cdot r_2).\\
+&\text{Div: }r_2\neq 0,\ \Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1),\ \Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2) \Rightarrow \Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1/r_2).
 \end{align*}
 \end{lemma}
 
-\begin{proof}[Proof (Add)]
-Let $s_1 : \Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$ and $s_2 : \Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2)$.
+\begin{proof}
+We proceed left-to-right by lifting each operand’s multi-step reduction through its evaluation context (Lemma \ref{context-lifting-lemma}) and then append the computation step using concatenation (Lemma \ref{concatenation-lemma}).
+\begin{description}
+\item[Add.] Let $s_1 : \Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$ and $s_2 : \Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2)$.
 
-We apply context lifting to $s_1$ using $C_L[t]=\operatorname{add}(t,e_2)$ with lifting property E-AddL to obtain:
+We apply the context lifting lemma (Lemma \ref{context-lifting-lemma}) to $s_1$ using $C_L[t]=\operatorname{add}(t,e_2)$ with lifting property E-AddL to obtain:
 \[
 L : \Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{add}(\operatorname{const}(r_1),e_2).
 \]
 
-We apply context lifting to $s_2$ using $C_R[t]=\operatorname{add}(\operatorname{const}(r_1),t)$ with lifting property E-AddR to obtain:
+We apply the context lifting again to $s_2$ using $C_R[t]=\operatorname{add}(\operatorname{const}(r_1),t)$ with lifting property E-AddR to obtain:
 \[
 R : \Gamma\vdash \operatorname{add}(\operatorname{const}(r_1),e_2)\to^{\!*}\operatorname{add}(\operatorname{const}(r_1),\operatorname{const}(r_2)).
 \]
 
-By rule E-Add, we have $\Gamma\vdash \operatorname{add}(\operatorname{const}(r_1),\operatorname{const}(r_2))\to \operatorname{const}(r_1+r_2)$. We extend $R$ with this step using trans to get:
+By rule E-Add, we have $\Gamma\vdash \operatorname{add}(\operatorname{const}(r_1),\operatorname{const}(r_2))\to \operatorname{const}(r_1+r_2)$. We extend $R$ with this step by the definition of $\to^{*}$ to get:
 \[
 R' : \Gamma\vdash \operatorname{add}(\operatorname{const}(r_1),e_2)\to^{\!*}\operatorname{const}(r_1+r_2).
 \]
 
-Applying concatenation to $L$ and $R'$ yields $\Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1+r_2)$.
-\end{proof}
+Applying concatenation lemma (Lemma \ref{concatenation-lemma}) to $L$ and $R'$ yields $\Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1+r_2)$.
 
-\emph{Proof (Sub/Mul).} Identical reasoning to addition using E-SubL/E-SubR/E-Sub and E-MulL/E-MulR/E-Mul respectively.
+\item[Sub/Mul.] Identical reasoning to addition using E-SubL/E-SubR/E-Sub and E-MulL/E-MulR/E-Mul respectively.
 
-\begin{proof}[Proof (Div)]
-Let $nz : r_2\neq 0$, $s_1 : \Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$, and $s_2 : \Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2)$.
-
-We apply context lifting to $s_1$ using $C_L[t]=\operatorname{div}(t,e_2)$ with lifting property E-DivL to obtain:
-\[
-L : \Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(\operatorname{const}(r_1),e_2).
-\]
-
-We apply context lifting to $s_2$ using $C_R[t]=\operatorname{div}(\operatorname{const}(r_1),t)$ with lifting property E-DivR to obtain:
-\[
-R : \Gamma\vdash \operatorname{div}(\operatorname{const}(r_1),e_2)\to^{\!*}\operatorname{div}(\operatorname{const}(r_1),\operatorname{const}(r_2)).
-\]
-
-By rule E-Div with premise $r_2\neq 0$, we have $\Gamma\vdash \operatorname{div}(\operatorname{const}(r_1),\operatorname{const}(r_2))\to \operatorname{const}(r_1/r_2)$. We extend $R$ with this step using trans to get:
-\[
-R' : \Gamma\vdash \operatorname{div}(\operatorname{const}(r_1),e_2)\to^{\!*}\operatorname{const}(r_1/r_2).
-\]
-
-Applying concatenation to $L$ and $R'$ yields $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{const}(r_1/r_2)$.
+\item[Div.] Identical reasoning to addition using E-DivL/E-DivR, with the premise $r_2\neq 0$ required to apply the E-Div computation rule in the final step.
+\end{description}
 \end{proof}
 
 
 \newpage
 \section{Proofs}
 
-\subsection*{Equivalence}
-To show that the evaluation function and the small step semantics agree, we have to show that
-\[ e \downarrow_{\Gamma} q \iff \Gamma\vdash e \to^{\!*} \operatorname{const}(q)\qquad \text{and} \qquad e \downarrow\!\downarrow_{\Gamma} \iff \Gamma\vdash e \to^{\!*} n \text{ stuck as above}.\]
-
-
-\subsection*{Evaluation preservation}
-\begin{lemma}[Single-step preserves evaluation (Lean: \texttt{step\_preserves\_eval})]
-If $\Gamma\vdash e\to e'$ then $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)$.
-\end{lemma}
-\emph{Proof.} We do (structural) induction on $\Gamma\vdash e\to^{*}e'$. Cases:
-
-
-\begin{description}
-\item[E-Var.] Premise: $\Gamma(x)=q$. Then
-\begin{align*}
-\operatorname{eval}(\operatorname{var}(x),\Gamma)&=\Gamma[x]?\\
-&=\text{some }q\\
-&=\operatorname{eval}(\operatorname{const}(q),\Gamma).
-\end{align*}
-\item [E-AddL.] Premise: $\Gamma\vdash e_1\to e_1'$ and IH gives $\operatorname{eval}(e_1,\Gamma)=\operatorname{eval}(e_1',\Gamma)$. Then
-\begin{align*}
-\operatorname{eval}(\operatorname{add}(e_1,e_2),\Gamma)
-&=\text{do }(\leftarrow \operatorname{eval}(e_1,\Gamma)) + (\leftarrow \operatorname{eval}(e_2,\Gamma))\\
-&=\text{do }(\leftarrow \operatorname{eval}(e_1',\Gamma)) + (\leftarrow \operatorname{eval}(e_2,\Gamma))\\
-&=\operatorname{eval}(\operatorname{add}(e_1',e_2),\Gamma).
-\end{align*}
-\item [E-AddR.] Premises: $v$ value and $\Gamma\vdash e_2\to e_2'$. By canonical forms for values, $v=\operatorname{const}(r)$, hence $\operatorname{eval}(v,\Gamma)=\text{some }r$. IH: $\operatorname{eval}(e_2,\Gamma)=\operatorname{eval}(e_2',\Gamma)$. Then
-\begin{align*}
-\operatorname{eval}(\operatorname{add}(v,e_2),\Gamma)
-&=\text{do }(\leftarrow \operatorname{eval}(v,\Gamma)) + (\leftarrow \operatorname{eval}(e_2,\Gamma))\\
-&=\text{do }(\leftarrow \text{some }r) + (\leftarrow \operatorname{eval}(e_2,\Gamma))\\
-&=\text{do }r + (\leftarrow \operatorname{eval}(e_2,\Gamma))\\
-&=\text{do }r + (\leftarrow \operatorname{eval}(e_2',\Gamma))\\
-&=\operatorname{eval}(\operatorname{add}(v,e_2'),\Gamma).
-\end{align*}
-\item [E-Add.] Both sides constants. Then
-\begin{align*}
-\operatorname{eval}(\operatorname{add}(\operatorname{const}(q_1),\operatorname{const}(q_2)),\Gamma)
-&=\text{do }(\leftarrow \text{some }q_1) + (\leftarrow \text{some }q_2)\\
-&=\text{some }(q_1+q_2)\\
-&=\operatorname{eval}(\operatorname{const}(q_1+q_2),\Gamma).
-\end{align*}
-\item [E-SubL/E-SubR/E-Sub.] Identical equational reasoning with $-$ in place of $+$.
-\item [E-MulL/E-MulR/E-Mul.] Identical equational reasoning with $*$ in place of $+$.
-\item [E-DivL.] Premise: $\Gamma\vdash e_1\to e_1'$ and IH gives $\operatorname{eval}(e_1,\Gamma)=\operatorname{eval}(e_1',\Gamma)$. Then
-\begin{align*}
-\operatorname{eval}(\operatorname{div}(e_1,e_2),\Gamma)
-&=\text{do }r_b\leftarrow \operatorname{eval}(e_2,\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\\
-&\qquad\textbf{ else }r_a\leftarrow \operatorname{eval}(e_1,\Gamma);\ \text{some }(r_a/r_b)\\
-&=\text{do }r_b\leftarrow \operatorname{eval}(e_2,\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\\
-&\qquad\textbf{ else }r_a\leftarrow \operatorname{eval}(e_1',\Gamma);\ \text{some }(r_a/r_b)\\
-&=\operatorname{eval}(\operatorname{div}(e_1',e_2),\Gamma).
-\end{align*}
-\item [E-DivR.] Premises: $v$ value so $v=\operatorname{const}(r)$ and $\operatorname{eval}(v,\Gamma)=\text{some }r$, and $\Gamma\vdash e_2\to e_2'$ with IH $\operatorname{eval}(e_2,\Gamma)=\operatorname{eval}(e_2',\Gamma)$. Then
-\begin{align*}
-\operatorname{eval}(\operatorname{div}(v,e_2),\Gamma)
-&=\text{do }r_b\leftarrow \operatorname{eval}(e_2,\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\\
-&\qquad\textbf{ else }r_a\leftarrow \operatorname{eval}(v,\Gamma);\ \text{some }(r_a/r_b)\\
-&=\text{do }r_b\leftarrow \operatorname{eval}(e_2',\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\\
-&\qquad\textbf{ else }r_a\leftarrow \text{some }r;\ \text{some }(r_a/r_b)\\
-&=\operatorname{eval}(\operatorname{div}(v,e_2'),\Gamma).
-\end{align*}
-\item [E-Div.] Premise: $q_2\neq 0$. Then
-\begin{align*}
-\operatorname{eval}(\operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(q_2)),\Gamma)
-&=\text{do }r_b\leftarrow \text{some }q_2;\\ 
-&\textbf{if }r_b=0\textbf{ then }\text{none } \textbf{ else } r_a\leftarrow \text{some }q_1;\ \text{some }(r_a/r_b)\\
-&=\text{some }(q_1/q_2) \quad(\text{since }q_2\neq 0)\\
-&=\operatorname{eval}(\operatorname{const}(q_1/q_2),\Gamma).
-\end{align*}
-\end{description}
-\qed
-
-\begin{lemma}[Multi-step preserves evaluation (Lean: \texttt{steps\_preserve\_eval})]
-If $\Gamma\vdash e\to^{\!*} e'$ then $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)$.
-\end{lemma}
-\emph{Proof.} Induction on the length of the small step derivation. The reflexive case trivial. In the inductive case, by definition of $\to^{*}$ we have that $e\to^{*}e''$ and $e''\to e$. Using the induction hypothesis on $e\to^{*}e''$ we have $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e'',\Gamma)$. By using Lemma 1 on $e''\to e$ we have $\operatorname{eval}(e'', \Gamma)=\operatorname{eval}(e, \Gamma)$. If we combine both, we get $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)$. \qed
-
-
-
-\subsection*{Soundness}
-\begin{theorem}[Soundness (Lean: \texttt{small\_step\_soundness})]
-If $\Gamma\vdash e \to^{\!*} \operatorname{const}(q)$ then $e \downarrow_{\Gamma} q$.
-\end{theorem}
-\emph{Proof.} By multi-step preservation,
-\begin{align*}
-\operatorname{eval}(e,\Gamma)&=\operatorname{eval}(\operatorname{const}(q),\Gamma)\\
-&=\text{some }q
-\end{align*}
-by the first clause of the definition of \texttt{eval}. Hence $e \downarrow_{\Gamma} q$. \qed
-
-\newpage
-\subsection*{Completeness}
-
-As a reminder for the upcoming proof, those are the definitions for the evaluation function from \texttt{Test.lean}:
+For the upcoming proofs, recall the definitions of the evaluation function from \texttt{math-expr.lean}:
 \begin{align*}
 &\operatorname{eval}(\operatorname{const}(q),\Gamma)=\text{some }q,\\
 &\operatorname{eval}(\operatorname{var}(x),\Gamma)=\Gamma[x]?,\\
@@ -338,14 +170,152 @@ As a reminder for the upcoming proof, those are the definitions for the evaluati
 &\operatorname{eval}(\operatorname{div}(a,b),\Gamma)=\text{do }r_b\leftarrow \operatorname{eval}(b,\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\textbf{ else }r_a\leftarrow \operatorname{eval}(a,\Gamma);\ \text{some }(r_a/r_b).
 \end{align*}
 
-\begin{theorem}[Completeness (Lean: \texttt{eval\_some\_implies\_steps\_to\_const})]
-If $e \downarrow_{\Gamma} \operatorname{some}q$ then $\Gamma\vdash e \to^{\!*} \operatorname{const}(q)$.
+\subsection*{Equivalence}
+
+We say an expression $e$ is \emph{stuck} if is not of the form $\operatorname{const}(q)$ for some $q\in\mathbb{Q}$ and it cannot take a step: there is no $e'$ with $\Gamma\vdash e\to e'$. This includes both terminal stuck forms and compound expressions containing them (e.g., $\operatorname{add}(\operatorname{var}(x),e_2)$ where $\Gamma(x)=\bot$).
+
+To show that the evaluation function and the small step semantics agree, we have to show that
+\[ \operatorname{eval}(e, \Gamma) = \operatorname{some} q \iff \Gamma\vdash e \to^{\!*} \operatorname{const}(q)
+\]
+and 
+\[ \operatorname{eval}(e, \Gamma) = \text{none} \iff \Gamma\vdash e \to^{\!*} n \text{ stuck as above}.\]
+
+We next prove that single steps preserve the result of \texttt{eval}, and lift this to multi-step preservation. From multi-step preservation we can then conclude soundness (small-step reducing to a constant implies that the evaluation function evaluates to the same value). Then we establish completeness, showing any successful evaluation yields a multi-step reduction to the corresponding constant. Finally, we analyze the failure cases to complete the second equivalence, proving that evaluation yields none if and only if the small-step semantics reduces the expression to a stuck term.
+
+
+\subsection*{Evaluation preservation}
+\begin{lemma}[Single-step preserves evaluation, Lean: \texttt{step\_preserves\_eval}]
+    \label{single-step-preservation-lemma}
+If $\Gamma\vdash e\to e'$ then $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)$.
+\end{lemma}
+\begin{proof} We do induction on $\Gamma\vdash e\to e'$. Cases:
+
+
+\begin{description}
+\item[E-Var.] By definition of the rule we have $\Gamma(x)=q$. Then
+\begin{align}
+\operatorname{eval}(\operatorname{var}(x),\Gamma)&=\Gamma[x]? \tag{definition of eval}\nonumber\\
+&=\text{some }q \tag{since $\Gamma(x)=q$}\nonumber\\
+&=\operatorname{eval}(\operatorname{const}(q),\Gamma). \tag{definition of eval}\nonumber
+\end{align}
+
+
+\item [E-AddL.] By definition of the rule we have $\Gamma\vdash e_1\to e_1'$. Applying the induction hypothesis, this gives $\operatorname{eval}(e_1,\Gamma)=\operatorname{eval}(e_1',\Gamma)$. Then
+\begin{align}
+\operatorname{eval}(\operatorname{add}(e_1,e_2),\Gamma)
+&=\text{do }(\leftarrow \operatorname{eval}(e_1,\Gamma)) + (\leftarrow \operatorname{eval}(e_2,\Gamma)) \tag{definition of eval}\nonumber\\
+&=\text{do }(\leftarrow \operatorname{eval}(e_1',\Gamma)) + (\leftarrow \operatorname{eval}(e_2,\Gamma)) \tag{$\operatorname{eval}(e_1,\Gamma)=\operatorname{eval}(e_1',\Gamma)$}\nonumber\\
+&=\operatorname{eval}(\operatorname{add}(e_1',e_2),\Gamma).\tag{definition of eval}\nonumber
+\end{align}
+
+
+\item [E-AddR.] By definition of the rule we have that the first operand is of the form $\operatorname{const}(q)$ for some $q$ and that $\Gamma\vdash e_2\to e_2'$. Applying the induction hypothesis, this gives $\operatorname{eval}(e_2,\Gamma)=\operatorname{eval}(e_2',\Gamma)$. Then
+\begin{align}
+\operatorname{eval}(\operatorname{add}(\operatorname{const}(q),e_2),\Gamma)
+&=\text{do }(\leftarrow \operatorname{eval}(\operatorname{const}(q),\Gamma)) + (\leftarrow \operatorname{eval}(e_2,\Gamma)) \tag{definition of eval}\nonumber\\
+&=\text{do }(\leftarrow \operatorname{eval}(\operatorname{const}(q),\Gamma)) + (\leftarrow \operatorname{eval}(e_2',\Gamma))\tag{$\operatorname{eval}(e_2,\Gamma)=\operatorname{eval}(e_2',\Gamma)$}\nonumber\\
+&=\operatorname{eval}(\operatorname{add}(\operatorname{const}(q),e_2'),\Gamma). \tag{definition of eval}\nonumber
+\end{align}
+
+
+\item [E-Add.] By definition of the rule we have that both operands are of the form $\operatorname{const}(q)$ for some $q$. Then
+\begin{align*}
+\operatorname{eval}(\operatorname{add}(\operatorname{const}(q_1),\operatorname{const}(q_2)),\Gamma)
+&=\text{do }(\leftarrow \text{some }q_1) + (\leftarrow \text{some }q_2) \tag{definition of eval}\nonumber\\
+&=\text{some }(q_1+q_2) \tag{evaluate}\nonumber\\
+&=\operatorname{eval}(\operatorname{const}(q_1+q_2),\Gamma). \tag{definition of eval}\nonumber
+\end{align*}
+
+
+\item [E-SubL/E-SubR/E-Sub.] Identical equational reasoning with $-$ in place of $+$.
+
+
+\item [E-MulL/E-MulR/E-Mul.] Identical equational reasoning with $*$ in place of $+$.
+
+
+\item [E-DivL.] By definition of the rule we have $\Gamma\vdash e_1\to e_1'$ and applying the induction hypothesis gives $\operatorname{eval}(e_1,\Gamma)=\operatorname{eval}(e_1',\Gamma)$. Then
+\begin{align*}
+\operatorname{eval}(\operatorname{div}(e_1,e_2),\Gamma)
+&=\text{do }r_b\leftarrow \operatorname{eval}(e_2,\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\tag{definition of eval}\nonumber\\
+&\qquad\textbf{ else }r_a\leftarrow \operatorname{eval}(e_1,\Gamma);\ \text{some }(r_a/r_b)\\
+&=\text{do }r_b\leftarrow \operatorname{eval}(e_2,\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\\
+&\qquad\textbf{ else }r_a\leftarrow \operatorname{eval}(e_1',\Gamma);\ \text{some }(r_a/r_b) \tag{$\operatorname{eval}(e_1,\Gamma)=\operatorname{eval}(e_1',\Gamma)$}\nonumber\\
+&=\operatorname{eval}(\operatorname{div}(e_1',e_2),\Gamma). \tag{definition of eval}\nonumber
+\end{align*}
+
+
+\item [E-DivR.] By definition of the rule we have that the first operand is of the form $\operatorname{const}(q)$ for some $q$ and that $\Gamma\vdash e_2\to e_2'$. Applying the induction hypothesis gives $\operatorname{eval}(e_2,\Gamma)=\operatorname{eval}(e_2',\Gamma)$. Then
+\begin{align*}
+\operatorname{eval}(\operatorname{div}(\operatorname{const}(q),e_2),\Gamma)
+&=\text{do }r_b\leftarrow \operatorname{eval}(e_2,\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\\
+&\qquad\textbf{ else }r_a\leftarrow \operatorname{eval}(\operatorname{const}(q),\Gamma);\ \text{some }(r_a/r_b)\tag{definition of eval}\nonumber\\
+&=\text{do }r_b\leftarrow \operatorname{eval}(e_2',\Gamma);\ \textbf{if }r_b=0\textbf{ then }\text{none}\\
+&\qquad\textbf{ else }r_a\leftarrow \operatorname{eval}(\operatorname{const}(q), \Gamma);\ \text{some }(r_a/r_b)\tag{$\operatorname{eval}(e_2,\Gamma)=\operatorname{eval}(e_2',\Gamma)$}\nonumber\\
+&=\operatorname{eval}(\operatorname{div}(\operatorname{const}(q),e_2'),\Gamma).\tag{definition of eval}\nonumber
+\end{align*}
+
+\item [E-Div.] By definition of the rule we have that both operands are of the form $\operatorname{const}(q)$ for some $q$ and that the second constant is nonzero. Then
+\begin{align*}
+\operatorname{eval}(\operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(q_2)),\Gamma)
+&=\text{do }r_b\leftarrow \operatorname{eval}(\operatorname{const}(q_2), \Gamma); \textbf{if }r_b=0\textbf{ then }\text{none } \\ 
+& \qquad\textbf{ else } r_a\leftarrow \text{some }q_1;\ \text{some }(r_a/r_b)\tag{definition of eval}\nonumber\\
+&=\text{some }(q_1/q_2) \tag{evaluate with $q_2\neq 0$}\nonumber\\
+&=\operatorname{eval}(\operatorname{const}(q_1/q_2),\Gamma).\tag{definition of eval}\nonumber
+\end{align*}
+\end{description}
+
+Thus, case analysis over all possible derivation rules shows in every instance that \(\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)\). Hence single-step reduction preserves evaluation, completing the proof.
+\end{proof}
+
+\begin{lemma}[Multi-step preserves evaluation (Lean: \texttt{steps\_preserve\_eval})]
+If $\Gamma\vdash e\to^{\!*} e'$ then $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)$.
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the derivation of $\Gamma\vdash e\to^{\!*} e'$.
+
+\textbf{Base case (reflexive):} The derivation is the reflexive rule, so $e = e'$. Then $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)$ holds trivially.
+
+\textbf{Inductive case (transitive):} By definition of $\to^{*}$, the derivation has the form $\Gamma\vdash e\to^{\!*}e''$ followed by a single step $\Gamma\vdash e''\to e'$ for some intermediate expression $e''$. 
+
+By the induction hypothesis applied to $\Gamma\vdash e\to^{\!*}e''$, we obtain $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e'',\Gamma)$.
+
+By the single-step preservation lemma (Lemma \ref{single-step-preservation-lemma}) applied to $\Gamma\vdash e''\to e'$, we obtain $\operatorname{eval}(e'',\Gamma)=\operatorname{eval}(e',\Gamma)$.
+
+By transitivity of equality, combining these two results yields $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(e',\Gamma)$.
+
+Thus multi-step reduction preserves evaluation.
+\end{proof}
+
+
+
+\subsection*{Soundness}
+\begin{theorem}[Soundness, Lean: \texttt{small\_step\_soundness}]
+If $\Gamma\vdash e \to^{\!*} \operatorname{const}(q)$ then $\operatorname{eval}(e, \Gamma) = \operatorname{some} q$.
 \end{theorem}
-\emph{Proof.} By structural induction on $e$:
+\begin{proof}
+By multi-step preservation and the first clause of the definition of \texttt{eval},
+\begin{align*}
+\operatorname{eval}(e,\Gamma)&=\operatorname{eval}(\operatorname{const}(q),\Gamma)\\
+&=\text{some }q
+\end{align*}
+\end{proof}
+
+%\newpage
+\subsection*{Completeness}
+
+
+
+\begin{theorem}[Completeness (Lean: \texttt{eval\_some\_implies\_steps\_to\_const})]
+    \label{completeness-theorem}
+If $\operatorname{eval}(e, \Gamma) = \operatorname{some}q$ then $\Gamma\vdash e \to^{\!*} \operatorname{const}(q)$.
+\end{theorem}
+\begin{proof}
+By functional induction on the evaluation function:
 \begin{description}
 \item[Const.] We have $e = \operatorname{const}(r)$ for some $r\in \mathbb{Q}$. Then, $\operatorname{eval}(\operatorname{const}(r),\Gamma)=\text{some }q$. By definition of eval, we have $r = q$. By taking zero steps we have $\Gamma \vdash \operatorname{const}(r) \to^{*} \operatorname{const}(q)$.
 
-\item[Var.] We have $e = \operatorname{var}(x)$ for some $x\in \text{String}$. Then, $\operatorname{eval}(\operatorname{var}(x),\Gamma)=\text{some }q$. By definition of eval we have $\Gamma[x]?=\text{some }q$ and thus $\Gamma(x) = q$. By applying E-Var once we get $\Gamma\vdash \operatorname{var}(x)\to^{*}\text{const }q$.
+\item[Var.] We have $e = \operatorname{var}(x)$ for some string $x$. Then, $\operatorname{eval}(\operatorname{var}(x),\Gamma)=\text{some }q$. By definition of eval we have $\Gamma[x]?=\text{some }q$ and thus $\Gamma(x) = q$. By applying E-Var once we get $\Gamma\vdash \operatorname{var}(x)\to^{*}\text{const }q$.
 
 \item[Add.] We have $e = \operatorname{add}(e_1,e_2)$.
 
@@ -375,30 +345,27 @@ unfolds to
 \begin{align*}
 \text{do }r_2\leftarrow \operatorname{eval}(e_2,\Gamma);\ \textbf{if }r_2=0\textbf{ then }\text{none}\textbf{ else }r_1\leftarrow \operatorname{eval}(e_1,\Gamma);\ \text{some }(r_1/r_2)=\text{some }q,
 \end{align*}
-which is possible iff there exist $r_1,r_2$ with
+which is possible iff there exist $r_1,r_2\in \mathbb{Q}$ with
 \begin{align*}
 \operatorname{eval}(e_2,\Gamma)=\text{some }r_2,\ r_2\neq 0,\ \operatorname{eval}(e_1,\Gamma)=\text{some }r_1,\ q=r_1/r_2.
 \end{align*}
-We apply our induction hypothesis to both evaluations to obtain $\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$ and $\Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2)$, then the division reduction lemma (using $r_2\neq 0$) yields $\operatorname{div}(e_1, e_2)\to^{*}\operatorname{const}(r_1/r_2)$.
+We apply our induction hypothesis to both evaluations to obtain $\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$ and $\Gamma\vdash e_2\to^{\!*}\operatorname{const}(r_2)$, then the division reduction lemma (using $r_2\neq 0$) yields $\Gamma\vdash\operatorname{div}(e_1, e_2)\to^{*}\operatorname{const}(r_1/r_2)$.
 \end{description}
-\qed
+\end{proof}
 
-\newpage
+% \newpage
 \subsection*{Failure and stuckness}
 
-We say an expression $e$ is \emph{stuck} if it cannot take a step: there is no $e'$ with $\Gamma\vdash e\to e'$. This includes both terminal stuck forms and compound expressions containing them (e.g., $\operatorname{add}(\operatorname{var}(x),e_2)$ where $\Gamma(x)=\bot$).
-
-An expression $e$ \emph{reaches a terminal stuck form} iff $\Gamma \vdash e \to^{\!*} n$, where $n$ is one of the two terminal stuck forms: $\operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(0))$ or $\operatorname{var}(x)$ with $\Gamma(x)=\bot$.
-\begin{lemma}
+\begin{theorem}
 $\operatorname{eval}(e,\Gamma)=\text{none}$ iff $\Gamma\vdash e \to^{\!*} n$ where $n$ is stuck.
-\end{lemma}
+\end{theorem}
 
 \begin{proof}
 We prove both directions.
 
 \paragraph{($\Rightarrow$) If $\operatorname{eval}(e,\Gamma)=\text{none}$ then $\Gamma\vdash e \to^{\!*} n$ where $n$ is stuck.}
 
-By structural induction on $e$.
+By functional induction on the evaluation function.
 
 \begin{description}
 \item[Const.] We have $e=\operatorname{const}(q)$. Then $\operatorname{eval}(\operatorname{const}(q),\Gamma)=\text{some }q\neq\text{none}$, contradiction.
@@ -411,9 +378,9 @@ By structural induction on $e$.
 \]
 This is possible iff $\operatorname{eval}(e_1,\Gamma)=\text{none}$ or $\operatorname{eval}(e_2,\Gamma)=\text{none}$ (or both).
 
-\emph{Subcase} $\operatorname{eval}(e_1,\Gamma)=\text{none}$. By IH, $\Gamma\vdash e_1\to^{\!*}n_1$ where $n_1$ is stuck. By context lifting (using E-AddL repeatedly), $\Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{add}(n_1,e_2)$. This compound expression is stuck: E-AddL cannot apply (since $n_1$ is stuck), and E-AddR cannot apply (since $n_1$ is not a value—it's either $\operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(0))$ or $\operatorname{var}(x)$ with $\Gamma(x)=\bot$, neither of which is a value). E-Add cannot apply since $n_1$ is not a constant.
+\emph{Subcase} $\operatorname{eval}(e_1,\Gamma)=\text{none}$. By induction hypothesis, $\Gamma\vdash e_1\to^{\!*}n_1$ where $n_1$ is stuck. By context lifting (using E-AddL repeatedly), $\Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{add}(n_1,e_2)$. Since $n_1$ is stuck and thus cannot be of the form $\operatorname{const}(q)$ for any $q\in\mathbb{Q}$ both E-AddR and E-Add cannot apply. Since $n_1$ is stuck and thus $\not\exists e'. \Gamma\vdash n_1\to e'$, E-AddL also cannot apply. 
 
-\emph{Subcase} $\operatorname{eval}(e_1,\Gamma)=\text{some }r_1$ and $\operatorname{eval}(e_2,\Gamma)=\text{none}$. By completeness, $\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$. By IH on $e_2$, $\Gamma\vdash e_2\to^{\!*}n_2$ where $n_2$ is stuck. Context lifting gives $\Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{add}(\operatorname{const}(r_1),e_2)\to^{\!*}\operatorname{add}(\operatorname{const}(r_1),n_2)$. This is stuck: E-Add requires both arguments to be constants, but $n_2$ is not a constant; E-AddR requires $n_2$ to step, but $n_2$ is stuck.
+\emph{Subcase} $\operatorname{eval}(e_1,\Gamma)=\text{some }r_1$ and $\operatorname{eval}(e_2,\Gamma)=\text{none}$. By completeness (Theorem \ref{completeness-theorem}), $\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$. By induction hypothesis on $e_2$, $\Gamma\vdash e_2\to^{\!*}n_2$ where $n_2$ is stuck. Context lifting gives $\Gamma\vdash \operatorname{add}(e_1,e_2)\to^{\!*}\operatorname{add}(\operatorname{const}(r_1),e_2)\to^{\!*}\operatorname{add}(\operatorname{const}(r_1),n_2)$. This is stuck: E-Add requires both arguments to be constants, but $n_2$ is not a constant; E-AddR requires $n_2$ to step, but $n_2$ is stuck.
 
 \item[Sub/Mul.] We have $e=\operatorname{sub}(e_1,e_2)$, $e=\operatorname{mul}(e_1,e_2)$. Identical reasoning to addition using E-SubL/E-SubR/E-Sub and E-MulL/E-MulR/E-Mul respectively.
 
@@ -428,52 +395,51 @@ This equals none iff:
 \item $\operatorname{eval}(e_2,\Gamma)=\text{some }r_2$ with $r_2\neq 0$ and $\operatorname{eval}(e_1,\Gamma)=\text{none}$.
 \end{itemize}
 
-\emph{Subcase} $\operatorname{eval}(e_2,\Gamma)=\text{none}$. By IH, $\Gamma\vdash e_2\to^{\!*}n_2$ stuck. Context lifting gives $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(e_1,n_2)$, which is stuck by similar reasoning to addition.
+\emph{Subcase} $\operatorname{eval}(e_2,\Gamma)=\text{none}$. By induction hypothesis, $\Gamma\vdash e_2\to^{\!*}n_2$ stuck. Context lifting gives $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(e_1,n_2)$, which is stuck by similar reasoning to addition.
 
 \emph{Subcase} $\operatorname{eval}(e_2,\Gamma)=\text{some }0$ and $\operatorname{eval}(e_1,\Gamma)=\text{some }r_1$. By completeness, $\Gamma\vdash e_1\to^{\!*}\operatorname{const}(r_1)$ and $\Gamma\vdash e_2\to^{\!*}\operatorname{const}(0)$. Context lifting yields $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(\operatorname{const}(r_1),\operatorname{const}(0))$. This is stuck: E-Div requires $q_2\neq 0$, which fails here.
 
-\emph{Subcase} $\operatorname{eval}(e_2,\Gamma)=\text{some }0$ and $\operatorname{eval}(e_1,\Gamma)=\text{none}$. By IH, $\Gamma\vdash e_1\to^{\!*}n_1$ stuck. By completeness on $e_2$, $\Gamma\vdash e_2\to^{\!*}\operatorname{const}(0)$. We reach $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(n_1,\operatorname{const}(0))$, which is stuck.
+\emph{Subcase} $\operatorname{eval}(e_2,\Gamma)=\text{some }0$ and $\operatorname{eval}(e_1,\Gamma)=\text{none}$. By induction hypothesis, $\Gamma\vdash e_1\to^{\!*}n_1$ stuck. By completeness on $e_2$, $\Gamma\vdash e_2\to^{\!*}\operatorname{const}(0)$. We reach $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(n_1,\operatorname{const}(0))$, which is stuck.
 
-\emph{Subcase} $\operatorname{eval}(e_2,\Gamma)=\text{some }r_2$ with $r_2\neq 0$ and $\operatorname{eval}(e_1,\Gamma)=\text{none}$. By completeness on $e_2$ and IH on $e_1$, we reach $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(n_1,\operatorname{const}(r_2))$, which is stuck.
+\emph{Subcase} $\operatorname{eval}(e_2,\Gamma)=\text{some }r_2$ with $r_2\neq 0$ and $\operatorname{eval}(e_1,\Gamma)=\text{none}$. By completeness on $e_2$ and induction hypothesis on $e_1$, we reach $\Gamma\vdash \operatorname{div}(e_1,e_2)\to^{\!*}\operatorname{div}(n_1,\operatorname{const}(r_2))$, which is stuck.
 \end{description}
 
-\paragraph{($\Leftarrow$) If $\Gamma\vdash e \to^{\!*} n$ where $n$ is stuck and not a value, then $\operatorname{eval}(e,\Gamma)=\text{none}$.}
+\paragraph{($\Leftarrow$) If $\Gamma\vdash e \to^{\!*} n$ where $n$ is stuck, then $\operatorname{eval}(e,\Gamma)=\text{none}$.}
 
-By multi-step preservation, $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(n,\Gamma)$. We show $\operatorname{eval}(n,\Gamma)=\text{none}$ by structural induction on $n$.
+By multi-step preservation, $\operatorname{eval}(e,\Gamma)=\operatorname{eval}(n,\Gamma)$. We show $\operatorname{eval}(n,\Gamma)=\text{none}$ by functional induction on the evaluation function.
 
-\textbf{Terminal stuck forms:}
+\begin{description}
+    \item[Const.] We have $n=\operatorname{const}(q)$. By definition they are not stuck.
+    \item[Var.] We have $n=\operatorname{var}(x)$ with $\Gamma(x)=\bot$. Then $\operatorname{eval}(\operatorname{var}(x),\Gamma)=\Gamma[x]?=\text{none}$ by definition.
+    \item[Add. ] We have $n=\operatorname{add}(n_1,n_2)$ stuck. Since $n$ is stuck, E-AddL cannot apply, so $n_1$ must be stuck. By induction hypothesis, $\operatorname{eval}(n_1,\Gamma)=\text{none}$. Then
+    \[
+    \operatorname{eval}(\operatorname{add}(n_1,n_2),\Gamma)=\text{do }(\leftarrow \operatorname{eval}(n_1,\Gamma)) + (\leftarrow \operatorname{eval}(n_2,\Gamma))=\text{do }(\leftarrow \text{none}) + \cdots=\text{none}.
+    \]
+    \item[Sub. / Mul. ] We have either $n=\operatorname{sub}(n_1,n_2)$ or $n=\operatorname{mul}(n_1,n_2)$ stuck. Identical reasoning: the left operand must be stuck, so evaluation returns none.    
 
-\textbf{Case} $n=\operatorname{var}(x)$ with $\Gamma(x)=\bot$. Then $\operatorname{eval}(\operatorname{var}(x),\Gamma)=\Gamma[x]?=\text{none}$ by definition.
+    \item[Div. ] We have $n=\operatorname{div}(n_1,n_2)$ stuck. Since evaluation is left-to-right, for $n$ to be stuck we need E-DivL, E-DivR, and E-Div all to fail.
+    
+    E-DivL fails means $n_1$ cannot step, so either $n_1$ is stuck (and not a constant) or $n_1=\operatorname{const}(r_1)$ for some $r_1$.
+    
+    \emph{Case 1:} $n_1$ is stuck (not a constant). Then by induction hypothesis $\operatorname{eval}(n_1,\Gamma)=\text{none}$, giving
+    \[
+    \operatorname{eval}(\operatorname{div}(n_1,n_2),\Gamma)=\text{do }r_2\leftarrow \operatorname{eval}(n_2,\Gamma);\ \textbf{if }r_2=0\textbf{ then }\text{none}\textbf{ else }r_1\leftarrow \text{none};\cdots=\text{none}.
+    \]
+    
+    \emph{Case 2:} $n_1=\operatorname{const}(r_1)$. Now E-DivR and E-Div must also fail. E-DivR fails means $n_2$ cannot step, so either $n_2$ is stuck or $n_2=\operatorname{const}(r_2)$.
+    \begin{itemize}
+    \item If $n_2$ is stuck (not a constant), then by induction hypothesis $\operatorname{eval}(n_2,\Gamma)=\text{none}$, giving
+    \[
+    \operatorname{eval}(\operatorname{div}(\operatorname{const}(r_1),n_2),\Gamma)=\text{do }r_2\leftarrow \text{none};\cdots=\text{none}.
+    \]
+    \item If $n_2=\operatorname{const}(r_2)$, then for E-Div to fail we need $r_2=0$. Then
+    \[
+    \operatorname{eval}(\operatorname{div}(\operatorname{const}(r_1),\operatorname{const}(0)),\Gamma)=\text{do }r_2\leftarrow \text{some }0;\ \textbf{if }r_2=0\textbf{ then }\text{none}\cdots=\text{none}.
+    \]
+    \end{itemize}
+\end{description}
 
-\textbf{Case} $n=\operatorname{div}(\operatorname{const}(q_1),\operatorname{const}(0))$. Then
-\[
-\operatorname{eval}(n,\Gamma)=\text{do }r_2\leftarrow \text{some }0;\ \textbf{if }r_2=0\textbf{ then }\text{none}\textbf{ else }\cdots=\text{none}.
-\]
-
-\textbf{Compound stuck forms:}
-
-\textbf{Case} $n=\operatorname{const}(q)$. Constants are values, contradicting the assumption that $n$ is not a value.
-
-\textbf{Case} $n=\operatorname{add}(n_1,n_2)$ stuck. Since $n$ is stuck, E-AddL cannot apply, so $n_1$ must be stuck. By IH, $\operatorname{eval}(n_1,\Gamma)=\text{none}$. Then
-\[
-\operatorname{eval}(\operatorname{add}(n_1,n_2),\Gamma)=\text{do }(\leftarrow \operatorname{eval}(n_1,\Gamma)) + (\leftarrow \operatorname{eval}(n_2,\Gamma))=\text{do }(\leftarrow \text{none}) + \cdots=\text{none}.
-\]
-
-\textbf{Case} $n=\operatorname{sub}(n_1,n_2)$ or $n=\operatorname{mul}(n_1,n_2)$ stuck. Identical reasoning: the left operand must be stuck, so evaluation returns none.
-
-\textbf{Case} $n=\operatorname{div}(n_1,n_2)$ stuck. Since $n$ is stuck, either:
-\begin{itemize}
-\item $n_2$ is stuck (E-DivL fails), so by IH $\operatorname{eval}(n_2,\Gamma)=\text{none}$, giving
-\[
-\operatorname{eval}(\operatorname{div}(n_1,n_2),\Gamma)=\text{do }r_2\leftarrow \operatorname{eval}(n_2,\Gamma);\cdots=\text{do }r_2\leftarrow \text{none};\cdots=\text{none}.
-\]
-\item $n_2=\operatorname{const}(0)$ and $n_1$ stuck or $n_1=\operatorname{const}(r_1)$. If $n_1$ stuck, then $\operatorname{eval}(n_1,\Gamma)=\text{none}$ by IH, and evaluation fails. If $n_1=\operatorname{const}(r_1)$, then
-\[
-\operatorname{eval}(\operatorname{div}(\operatorname{const}(r_1),\operatorname{const}(0)),\Gamma)=\text{do }r_2\leftarrow \text{some }0;\ \textbf{if }r_2=0\textbf{ then }\text{none}\cdots=\text{none}.
-\]
-\end{itemize}
-
-Thus every stuck non-value evaluates to none.
+Thus every stuck expression evaluates to none.
 \end{proof}
 
 
