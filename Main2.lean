@@ -32,6 +32,36 @@ def evalWith : Expr → Env → Option Rat
           let ra ← evalWith a env
           some (ra / rb)
 
+/-- Partially evaluate an expression: substitute known variables and
+    fold arithmetic when both sides become constants; leave unknown vars symbolic. -/
+def partialEval : Expr → Env → Expr
+  | const q, _ => const q
+  | var name, env => match env.get? name with -- lookup the variable name, if in the environment, otherwise keep as it
+    | some v => const v
+    | none => var name
+
+  /- for all binary methods nothing changes besides only doing the evaluation if two constants are present -/
+  | add a b, env =>
+      let a' := partialEval a env; let b' := partialEval b env;
+      match a', b' with
+      | const qa, const qb => const (qa + qb)
+      | _, _ => add a' b'
+  | sub a b, env =>
+      let a' := partialEval a env; let b' := partialEval b env;
+      match a', b' with
+      | const qa, const qb => const (qa - qb)
+      | _, _ => sub a' b'
+  | mul a b, env =>
+      let a' := partialEval a env; let b' := partialEval b env;
+      match a', b' with
+      | const qa, const qb => const (qa * qb)
+      | _, _ => mul a' b'
+  | div a b, env =>
+      let a' := partialEval a env; let b' := partialEval b env;
+      match a', b' with
+      | const qa, const qb => if qb = (0 : Rat) then div a' b' else const (qa / qb)
+      | _, _ => div a' b'
+
 /-- Backward-compatible eval for closed expressions (no variables). -/
 def eval (e : Expr) : Option Rat :=
   evalWith e ({} : Env)
@@ -63,9 +93,13 @@ def exampleVar : Expr :=
 
 def envExample : Env := ({} : Env).insert "x" (3 : Rat)
 
+def exampleVar2 : Expr :=
+  add (add (const 1) (const 2)) (var "y")
+
 #eval exampleBad.eval   -- none
 #eval exampleGood.eval  -- some (Std.Rat.mk 14 3)
 #eval exampleVar.evalWith envExample   -- some (Std.Rat.mk 7 1)
+#eval exampleVar2.partialEval envExample
 
 /-- Optional: pretty printing via toString. -/
 def toString : Expr → String
@@ -86,7 +120,9 @@ instance : ToString Expr where
 instance : Repr Expr where
   reprPrec e _ := toString e
 
+#eval toString exampleVar
 #eval toString exampleGood
+#eval toStringOption exampleBad.eval
 #eval toString exampleVar
 #eval toString (var "x")
 #eval toStringOption (exampleVar.evalWith envExample)
